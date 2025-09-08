@@ -20,6 +20,34 @@ def crear_tabla():
     conexion.commit()
     conexion.close()
 
+def crear_tabla_empleados():
+    conexion = sqlite3.connect("empleados.db")
+    cursor = conexion.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS empleados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Usuario TEXT NOT NULL,
+            Contraseña TEXT NOT NULL
+        )
+    ''')
+    print("Tabla creada")
+    conexion.commit()
+    conexion.close()
+
+def crear_tabla_gerentes():
+    conexion = sqlite3.connect("gerentes.db")
+    cursor = conexion.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS gerentes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Usuario TEXT NOT NULL,
+            Contraseña TEXT NOT NULL
+        )
+    ''')
+    print("Tabla creada")
+    conexion.commit()
+    conexion.close()
+
 def agregar_producto():
     limpiar()
     nombre = input("Ingrese el nombre del producto: ")
@@ -167,14 +195,15 @@ def mostrar_productos():
     else:
         print("No hay productos registrados.")
 
-def main():
+def menu_gerentes():
     
     crear_tabla()
+    limpiar()
     while True:
         
         print("\nSeleccione una opción:")
         print("1. Agregar producto")
-        print("2. Buscar producto por código")
+        print("2. Buscar producto por código:")
         print("3. Modificar producto")
         print("4. Eliminar producto")
         print("5. Vender producto")
@@ -206,6 +235,105 @@ def main():
             break
         else:
             print("Opción no válida, intente nuevamente.")
+
+
+def menu_empleados():
+    
+    crear_tabla()
+    limpiar()
+    while True:
+        
+        print("\nSeleccione una opción:")
+        print("1. Buscar producto por código:")
+        print("2. Vender producto")
+        print("3. Mostrar productos")
+        print("4. Salir")
+        opcion = input("Opción: ")
+        if opcion == "1":
+            codigo = input("Ingrese el código del producto que desea buscar: ")
+            producto = buscar_producto(codigo)
+            if producto:
+                print(f"Producto encontrado: Nombre: {producto[1]}, Código: {producto[2]}, Precio Unitario: {producto[3]}, Cantidad en stock: {producto[4]}")
+            else:
+                print("Producto no encontrado.")
+        elif opcion == "2":
+            vender_producto()
+        elif opcion == "3":
+            codigo= print("Productos")
+            mostrar_productos()
+        elif opcion == "4":
+            print("Saliendo del programa.")
+            break
+        else:
+            print("Opción no válida, intente nuevamente.")
+
+
+
+def si_gerentes():
+    print("\nIngrese usuario y contraseña:")
+    Usuario = input("Usuario: ")
+    Contraseña = input("Contraseña: ")
+
+    conexion = sqlite3.connect("gerentes.db")
+    cursor = conexion.cursor()
+    cursor.execute("SELECT * FROM gerentes WHERE Usuario = ? AND Contraseña = ?", (Usuario, Contraseña))
+    gerente = cursor.fetchone()
+    conexion.close()
+    return gerente
+
+def si_empleados():
+    print("\nIngrese usuario y contraseña:")
+    Usuario = input("Usuario: ")
+    Contraseña = input("Contraseña: ")
+
+    conexion = sqlite3.connect("empleados.db")
+    cursor = conexion.cursor()
+    cursor.execute("SELECT * FROM empleados WHERE Usuario = ? AND Contraseña = ?", (Usuario, Contraseña))
+    empleado = cursor.fetchone()
+    conexion.close()
+    return empleado
+
+def no_usuarios():
+    print("\nCree un usuario y contraseña para gerente:")
+    UsuarioG = input("Usuario: ")
+    ContraseñaG = input("Contraseña: ")
+
+    conexion = sqlite3.connect("gerentes.db")
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("INSERT INTO gerentes (Usuario, Contraseña) VALUES (?, ?)", (UsuarioG, ContraseñaG))
+        conexion.commit()
+        print("Su usuario y contraseña se ha guardado exitosamente.")
+    except sqlite3.IntegrityError:
+        print("Error al guardar usuario y contraseña, intente de nuevo.")
+    finally:
+        conexion.close()
+    main()
+
+def main():
+     crear_tabla_gerentes()
+     crear_tabla_empleados()
+
+     limpiar()
+
+     conexion = sqlite3.connect("gerentes.db")
+     cursor = conexion.cursor()
+     cursor.execute("SELECT * FROM gerentes")
+     hay_gerentes = cursor.fetchall()
+     conexion.close()
+
+     if not hay_gerentes:
+        no_usuarios()
+        return
+     usuario = si_gerentes()
+     if usuario:
+        menu_gerentes()
+     else:
+        empleado = si_empleados()
+        if empleado:
+            menu_empleados()
+        else:
+            print("Usuario o contraseña incorrectos.")
 
 if __name__ == "__main__":
     main()
