@@ -1,13 +1,15 @@
 import sqlite3
 import os
 from datetime import datetime
-import csv
 rango=None
 nombre_usuario=None
 reporte_ventas = []
 
 def limpiar():
-    os.system('cls')
+    if os.name == 'nt':   
+     os.system('cls')
+    else:                 
+     os.system('clear')
     
 def crear_tabla():
     conexion = sqlite3.connect("producto.db")
@@ -113,7 +115,7 @@ def agregar_gerente():
     conexion = sqlite3.connect("gerentes.db")
     cursor = conexion.cursor()
     try:
-        cursor.execute("INSERT INTO gerentes (nombre, contraseña) VALUES (?, ?)", 
+        cursor.execute("INSERT INTO gerentes (Usuario, Contraseña) VALUES (?, ?)", 
                        (nombre, contraseña))
         conexion.commit()
         print("Usuario guardado exitosamente.")
@@ -130,7 +132,7 @@ def agregar_empleado():
     conexion = sqlite3.connect("empleados.db")
     cursor = conexion.cursor()
     try:
-        cursor.execute("INSERT INTO empleados (nombre, contraseña) VALUES (?, ?)", 
+        cursor.execute("INSERT INTO empleados (Usuario, Contraseña) VALUES (?, ?)", 
                        (nombre, contraseña))
         conexion.commit()
         print("Usuario guardado exitosamente.")
@@ -161,7 +163,7 @@ def buscar_empleado(Usuario):
     limpiar()
     conexion = sqlite3.connect("empleados.db")
     cursor = conexion.cursor()
-    cursor.execute("SELECT * FROM emples WHERE Usuario = ?", (Usuario,))
+    cursor.execute("SELECT * FROM empleados WHERE Usuario = ?", (Usuario,))
     empleados = cursor.fetchone()
     conexion.close()
     return empleados
@@ -208,7 +210,7 @@ def modificar_gerente(Usuario):
         if Usuario:
             cursor.execute("UPDATE gerentes SET Usuario = ? WHERE Usuario = ?", (Usuario, Usuario))
         if Contraseña:
-            cursor.execute("UPDATE gerentes SET precio_unitario = ? WHERE codigo = ?", (Contraseña, Usuario))
+            cursor.execute("UPDATE gerentes SET Contraseña = ? WHERE Usuario = ?", (Contraseña, Usuario))
         
         conexion.commit()
         print("Usuario modificado exitosamente.")
@@ -232,7 +234,7 @@ def modificar_empleado(Usuario):
         if Usuario:
             cursor.execute("UPDATE empleados SET Usuario = ? WHERE Usuario = ?", (Usuario, Usuario))
         if Contraseña:
-            cursor.execute("UPDATE empleados SET precio_unitario = ? WHERE codigo = ?", (Contraseña, Usuario))
+            cursor.execute("UPDATE empleados SET Contraseña = ? WHERE Usuario = ?", (Contraseña, Usuario))
         
         conexion.commit()
         print("Usuario modificado exitosamente.")
@@ -269,7 +271,7 @@ def eliminar_empleado(Usuario):
     limpiar()
     conexion = sqlite3.connect("empleados.db")
     cursor = conexion.cursor()
-    cursor.execute("DELETE FROM emplados WHERE Usuario = ?", (Usuario,))
+    cursor.execute("DELETE FROM empleados WHERE Usuario = ?", (Usuario,))
     if cursor.rowcount > 0:
         print("Usuario eliminado correctamente.")
     else:
@@ -375,8 +377,8 @@ def mostrar_reporte_ventas(fecha_inicio, fecha_fin):
 def imprimir_ticket(productos_a_vender, total_venta, pago, cambio):
     limpiar()
     tienda = "Nombre de la Tienda"
-    direccion = "Septima avenida sur poniente no.64, Barrio Guadalupe"
-    telefono = "9191123208"
+    direccion = "Septima avenida no.123, Barrio ejemplo"
+    telefono = "9123456"
 
     print("\n--- Ticket de Compra ---")
     print(tienda)
@@ -397,13 +399,13 @@ def imprimir_ticket(productos_a_vender, total_venta, pago, cambio):
     print("------------------------\n")
 
 def mostrar_productos():
-   
+ 
     conexion = sqlite3.connect("producto.db")
     cursor = conexion.cursor()
     cursor.execute("SELECT nombre, codigo, precio_unitario, cantidad_stock FROM producto")
     productos = cursor.fetchall()
     conexion.close()
-    
+    limpiar() 
     if productos:
         encabezados = ["Nombre", "Código", "Precio Unitario", "Cantidad en Stock"]
         print(f"{encabezados[0]:<20} {encabezados[1]:<15} {encabezados[2]:<15} {encabezados[3]:<15}")
@@ -413,7 +415,7 @@ def mostrar_productos():
     else:
         print("No hay productos registrados.")
 
-def obtener_lista_usuarios():
+def obtener_lista_usuarios_combinados():
     conexion_g = sqlite3.connect("gerentes.db")
     cursor_g = conexion_g.cursor()
     cursor_g.execute("SELECT Usuario, Contraseña FROM gerentes")
@@ -444,12 +446,33 @@ def mostrar_usuarios_combinados():
     for fila in usuarios[1:]:
         print(f"{fila[0]:<10} {fila[1]:<20} {fila[2]:<20}")
 
+def obtener_lista_usuarios():
+    conexion_e = sqlite3.connect("empleados.db")
+    cursor_e = conexion_e.cursor()
+    cursor_e.execute("SELECT Usuario, Contraseña FROM empleados")
+    empleados = cursor_e.fetchall()
+    conexion_e.close()
+
+    
+    usuarios_combinados = [["Tipo", "Usuario", "Contraseña"]]
+    for e in empleados:
+        usuarios_combinados.append(["Empleado", e[0], e[1]])
+
+    return usuarios_combinados
+
+def mostrar_usuarios():
+    usuarios = obtener_lista_usuarios()
+    print("\n--- LISTA DE USUARIOS (EMPLEADOS) ---")
+    print(f"{'Tipo':<10} {'Usuario':<20} {'Contraseña':<20}")
+    print("=" * 55)
+    for fila in usuarios[1:]:
+        print(f"{fila[0]:<10} {fila[1]:<20} {fila[2]:<20}")
+
 def menu_administradordueño(nombre_usuario, rango):
     limpiar()
     crear_tabla()
     
     while True:
-        print("Por ahora solo funciona hasta la opcion 8")
         print("\nSeleccione una opción:")
         print("1. Agregar producto")
         print("2. Buscar producto por código:")
@@ -462,7 +485,7 @@ def menu_administradordueño(nombre_usuario, rango):
         print("9. Agregar gerentes o empleados")
         print("10. Modificar gerentes o empleados")
         print("11. Eliminar empleados o gerentes")
-        print("13. Salir (por ahora pon 9)")
+        print("12. Salir")
 
         opcion = input("Opción: ")
         if opcion == "1":
@@ -492,12 +515,45 @@ def menu_administradordueño(nombre_usuario, rango):
             fecha_fin = input("Ingrese fecha final (YYYY-MM-DD): ")
             mostrar_reporte_ventas(fecha_inicio, fecha_fin) 
         elif opcion == "9":
+            print ("1. Gerente")
+            print ("2. Empleado")
+            agrega=int (input ("¿De que cargo es el usuario que desea agregar? "))
+            if agrega == 1:
+                agregar_gerente()
+            elif agrega == 2:
+                agregar_empleado()
+        elif opcion == "10":
+            print ("1. Gerente")
+            print ("2. Empleado")
+            agrega=int (input ("¿De que cargo es el usuario que desea modificar? "))
+            if agrega == 1:
+                Usuario = input("Ingrese el Usuario que desea modificar: ")
+                modificar_gerente(Usuario)
+            elif agrega == 2:
+                Usuario = input("Ingrese el Usuario que desea modificar: ")
+                modificar_empleado(Usuario)
+            else:
+                print("Opcion no valida")       
+        elif opcion == "11":
+             print ("1. Gerente")
+             print ("2. Empleado")
+             agrega=int (input ("¿De que cargo es el usuario que desea eliminar? "))
+             if agrega == 1:
+                Usuario = input("Ingrese el Usuario que desea eliminar: ")
+                eliminar_gerente(Usuario)
+             elif agrega == 2:
+                Usuario = input("Ingrese el Usuario que desea eliminar: ")
+                eliminar_empleado(Usuario)
+             else:
+                print("Opcion no valida")
+             Usuario = input("Ingrese el Usuario que desea eliminar: ")
+        elif opcion == "12":
             print("Saliendo del programa.")
             break
         else:
             print("Opción no válida, intente nuevamente.")
 
-def menu_gerente():
+def menu_gerente(nombre_usuario, rango):
     limpiar()
     crear_tabla()
     
@@ -510,8 +566,12 @@ def menu_gerente():
         print("4. Eliminar producto")
         print("5. Vender producto")
         print("6. Mostrar productos")
-        print("7. Administrar empleados")
-        print("8. Salir")
+        print("7. Mostrar todos los empleados")
+        print("8. Reporte de ventas")
+        print("9. Agregar empleados")
+        print("10. Modificar empleados")
+        print("11. Eliminar empleados")
+        print("12. Salir")
 
         opcion = input("Opción: ")
         if opcion == "1":
@@ -535,8 +595,20 @@ def menu_gerente():
             codigo= print("Productos")
             mostrar_productos()
         elif opcion == "7":
-            mostrar_usuarios_combinados()
+            mostrar_usuarios()
         elif opcion == "8":
+            fecha_inicio = input("Ingrese fecha de inicio (YYYY-MM-DD): ")
+            fecha_fin = input("Ingrese fecha final (YYYY-MM-DD): ")
+            mostrar_reporte_ventas(fecha_inicio, fecha_fin) 
+        elif opcion == "9":
+                agregar_empleado()
+        elif opcion == "10":
+            Usuario = input("Ingrese el Usuario que desea modificar: ")
+            modificar_empleado(Usuario)
+        elif opcion == "11":
+            Usuario = input("Ingrese el Usuario que desea eliminar: ")
+            eliminar_empleado(Usuario)          
+        elif opcion == "12":
             print("Saliendo del programa.")
             break
         else:
@@ -544,7 +616,7 @@ def menu_gerente():
 
 
 
-def menu_empleados():
+def menu_empleados(nombre_usuario, rango):
     
     crear_tabla()
     limpiar()
