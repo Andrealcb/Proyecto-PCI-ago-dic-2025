@@ -146,3 +146,5 @@ CUANDO el usuario elija "Salir" en su menú correspondiente:
 
 FIN DEL PROGRAMA
 
+
+Nota: No se necesita instalar nada adicional para usar sqlite3, porque ya viene incluido con Python desde la versión 2.5 en adelante
